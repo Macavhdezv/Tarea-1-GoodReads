@@ -2,28 +2,164 @@
 title: "Tarea 1 Good Reads"
 output: html_document
 date: "2025-10-23"
+
 ---
-holaa
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
-## R Markdown
+```{r}
+library(tidyverse)
+library(Goodreader)
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+Goodreads <- read_csv("C:/Users/USER/OneDrive - Universidad Católica de Chile/Documentos/Tarea-1-GoodReads/books.csv")
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+Hazelwood_ratings <- search_goodreads(search_term = "Ali Hazelwood", search_in = "author", num_books = 18, sort_by = "ratings") 
 
-```{r cars}
-summary(cars)
-```
+Hazelwood_Published <- search_goodreads(search_term = "Ali Hazelwood", search_in = "author", num_books = 18, sort_by = "published_year") 
 
-## Including Plots
+df_hazelwood <- left_join(Hazelwood_Published, Hazelwood_ratings, by = "book_id")
 
-You can also embed plots, for example:
+df_Ahazelwood <- df_hazelwood %>%
+  select(book_id, 
+         titulo = title.x, 
+         autor = author.x, ratings, 
+         published_year)
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
+df_Ahazelwood <- df_Ahazelwood |> 
+  filter(!is.na(ratings))
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+df_Ahazelwood <- df_Ahazelwood |> mutate(titulo_limpio = str_remove_all(titulo, "\\s*\\(.*?\\)\\s*"))
+
+df_Ahazelwood <- df_Ahazelwood |> 
+  select(titulo_limpio, autor, ratings, published_year)
+
+df_Ahazelwood <- df_Ahazelwood |> 
+ filter("Loathe to Love You" != titulo_limpio)
+
+library(ggthemes)
+  
+df_Ahazelwood |> 
+  ggplot(aes(x = published_year, y = ratings, label = titulo_limpio)) +
+  geom_point(color = "#FF6B9D", size = 10, alpha = 0.7) +
+  geom_text(vjust = -0.5, hjust = 0.5, size = 3, color = "#8B4789") +
+  labs(
+   subtitle = "If academia ever makes you feel like you're not good or smart enough . . .", title = "It's not you, it's academia ✨",
+    x = "Published Year",
+    y = "Ratings"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.background = element_rect(fill = "#FFF0F5", color = NA),
+    panel.background = element_rect(fill = "#FFFFF0"),
+    plot.title = element_text(hjust = 0.5, color = "#FF1493", 
+                              size = 12, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, color = "#DA70D6", 
+                                 size = 10, face = "italic"),
+    axis.title = element_text(color = "#8B4789", face = "bold"),
+    axis.text = element_text(color = "#C71585"),
+    panel.grid.major = element_line(color = "#FFE4E1", linetype = "dashed"),
+    panel.grid.minor = element_blank()
+  )
+
+library(extrafont)
+library(ggrepel)
+
+#Aqui se puede manejar la dispersión de los puntos en X con width
+df_Ahazelwood|> 
+  ggplot(aes(x = published_year, y = ratings, label = titulo_limpio)) +
+  geom_jitter(aes(size = ratings), color = "#FF6B9D", alpha = 0.7,
+              width = 0.4, height = 0.2) +  # width controla dispersión en X
+  scale_size_continuous(range = c(5, 40)) +
+  geom_text(vjust = -0.4, hjust = 0.4, size = 3, color = "#8B4789",
+#                  max.overlaps = 20, box.padding = 0.5, point.padding = #0.3,
+#                  segment.color = "#DA70D6", segment.size = 0.3
+                  ) +
+  labs(
+    subtitle = "If academia ever makes you feel like you're not good or smart enough . . .", 
+    title = "It's not you, it's academia ✨",
+    x = "Published Year",
+    y = "Ratings"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.background = element_rect(fill = "#FFF0F5", color = NA),
+    panel.background = element_rect(fill = "#FFFFF0"),
+    plot.title = element_text(hjust = 0.5, color = "#FF1493", 
+                              size = 12, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, color = "#DA70D6", 
+                                 size = 10, face = "italic"),
+    axis.title = element_text(color = "#8B4789", face = "bold"),
+    axis.text = element_text(color = "#C71585"),
+    panel.grid.major = element_line(color = "#FFE4E1", linetype = "dashed"),
+    panel.grid.minor = element_blank(),
+    legend.position = "none"
+  )
+
+
+df_Ahazelwood |> 
+  ggplot(aes(x = published_year, y = ratings, label = titulo_limpio)) +
+  geom_jitter(aes(size = ratings), color = "#FF6B9D", alpha = 0.7,
+              width = 0.4, height = 0.5) +
+  scale_size_continuous(range = c(15, 50)) +
+  geom_text_repel(vjust = -0.5, hjust = 0.5, size = 3, color = "#8B4789",
+                  max.overlaps = 20, box.padding = 0.5, point.padding = 0.3,
+                  segment.color = "#DA70D6", segment.size = 0.3) +
+  labs(
+    subtitle = "If academia ever makes you feel like you're not good or smart enough . . .", 
+    title = "It's not you, it's academia ✨",
+    x = "Published Year",
+    y = "Ratings"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.background = element_rect(fill = "#FFF0F5", color = NA),
+    panel.background = element_blank(),
+    panel.border = element_blank(),
+    plot.title = element_text(hjust = 0.5, color = "#FF1493", 
+                              size = 20, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, color = "#DA70D6", 
+                                 size = 14, face = "italic"),
+    axis.title = element_text(color = "#8B4789", family = "Georgia"),
+    axis.text = element_text(color = "#C71585"),
+    panel.grid.major = element_line(color = "#8B3A62", linetype = "dashed"),
+    panel.grid.minor = element_blank(), 
+    legend.position = "none"
+  )
+
+#Guiado con Claude
+
+# Crear las posiciones con jitter primero
+set.seed(123)  # Para que sea reproducible
+df_HwdCoord <- df_Ahazelwood |> 
+  mutate(
+    year_jitter = published_year + runif(n(), -0.4, 0.4),    # Dispersión en X
+    ratings_jitter = ratings + runif(n(), -0.1, 0.1)         # Dispersión en Y
+  )
+
+# Crear el gráfico con las coordenadas dispersas
+df_HwdCoord|> 
+  ggplot(aes(x = year_jitter, y = ratings_jitter, label = titulo_limpio)) +
+  geom_point(aes(size = ratings), color = "#FF6B9D", alpha = 0.7) +
+  scale_size_continuous(range = c(8, 40)) +
+  geom_text_repel(vjust = -0.3, hjust = 0.5, size = 3, color = "#8B4789",
+                  max.overlaps = 20, box.padding = 0.5, point.padding = 0.3,
+                  segment.color = "#DA70D6", segment.size = 0.3) +
+  labs(
+    subtitle = "If academia ever makes you feel like you're not good or smart enough . . .", 
+    title = "It's not you, it's academia ✨",
+    x = "Published Year",
+    y = "Ratings"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.background = element_rect(fill = "#FFF0F5", color = NA),
+    plot.title = element_text(hjust = 0.5, color = "#FF1493", 
+                              size = 12, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, color = "#DA70D6", 
+                                 size = 10, face = "italic"),
+    axis.title = element_text(color = "#8B4789", face = "bold"),
+    axis.text = element_text(color = "#C71585"),
+    panel.grid.major = element_line(color = "#FFE4E1", linetype = "dashed"),
+    panel.grid.minor = element_blank(),
+    legend.position = "none"
+  )
+
+
