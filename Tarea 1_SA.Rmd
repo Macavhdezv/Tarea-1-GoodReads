@@ -1,0 +1,211 @@
+---
+title: "Tarea 1 Good Reads"
+output: html_document
+date: "2025-10-23"
+
+---
+
+Cargar librerías:
+
+```{r}
+library(tidyverse)
+library(Goodreader)
+library(ggthemes)
+library(extrafont)
+library(ggrepel)
+```
+
+La siguiente base de datos... ¿se usa? ¿por qué está en el script? Es importante limpiar el código antes de subirlo para no causar confusión a quien quiere replicar los pasos de lo que realizaste.
+
+```{r}
+Goodreads <- read_csv("C:/Users/USER/OneDrive - Universidad Católica de Chile/Documentos/Tarea-1-GoodReads/books.csv")
+```
+
+Llamar las bases de datos desde Goodreads:
+
+```{r}
+Hazelwood_ratings <- search_goodreads(search_term = "Ali Hazelwood", search_in = "author", num_books = 18, sort_by = "ratings") 
+
+Hazelwood_Published <- search_goodreads(search_term = "Ali Hazelwood", search_in = "author", num_books = 18, sort_by = "published_year") 
+```
+
+Unimos las bases de datos utilizando el book_id:
+
+```{r}
+df_hazelwood <- left_join(Hazelwood_Published, Hazelwood_ratings, by = "book_id")
+```
+
+Revisamos los nombres de las variables:
+
+```{r}
+colnames(df_hazelwood)
+```
+
+Esto identifica sin problemas cuáles son las columnas repetidas (¡usando el nombre!)
+
+Seleccionamos las variables de interés:
+
+```{r}
+df_Ahazelwood <- df_hazelwood %>%
+  select(book_id, 
+         titulo = title.x, 
+         autor = author.x, ratings, 
+         published_year)
+```
+
+Filtramos para dejar solo los archivos que contienen información en ratings y limpiaremos las columnas de interés previo a la visualización de los datos.
+
+```{r}
+df_Ahazelwood <- df_Ahazelwood |> 
+  filter(!is.na(ratings))
+
+df_Ahazelwood <- df_Ahazelwood |> mutate(titulo_limpio = str_remove_all(titulo, "\\s*\\(.*?\\)\\s*"))
+
+df_Ahazelwood <- df_Ahazelwood |> 
+  select(titulo_limpio, autor, ratings, published_year)
+
+df_Ahazelwood <- df_Ahazelwood |> 
+ filter("Loathe to Love You" != titulo_limpio)
+```
+
+Visualización de datos:
+
+```{r}
+df_Ahazelwood |> 
+  ggplot(aes(x = published_year, y = ratings, label = titulo_limpio)) +
+  geom_point(color = "#FF6B9D", size = 10, alpha = 0.7) +
+  geom_text(vjust = -0.5, hjust = 0.5, size = 3, color = "#8B4789") +
+  labs(
+   subtitle = "If academia ever makes you feel like you're not good or smart enough . . .", title = "It's not you, it's academia ✨",
+    x = "Published Year",
+    y = "Ratings"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.background = element_rect(fill = "#FFF0F5", color = NA),
+    panel.background = element_rect(fill = "#FFFFF0"),
+    plot.title = element_text(hjust = 0.5, color = "#FF1493", 
+                              size = 12, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, color = "#DA70D6", 
+                                 size = 10, face = "italic"),
+    axis.title = element_text(color = "#8B4789", face = "bold"),
+    axis.text = element_text(color = "#C71585"),
+    panel.grid.major = element_line(color = "#FFE4E1", linetype = "dashed"),
+    panel.grid.minor = element_blank()
+  )
+```
+
+
+```{r}
+df_Ahazelwood|> 
+  ggplot(aes(x = published_year, y = ratings, label = titulo_limpio)) +
+  geom_jitter(aes(size = ratings), color = "#FF6B9D", alpha = 0.7,
+              width = 0.4, height = 0.2) +  # width controla dispersión en X
+  scale_size_continuous(range = c(5, 40)) +
+  geom_text(vjust = -0.4, hjust = 0.4, size = 3, color = "#8B4789",
+#                  max.overlaps = 20, box.padding = 0.5, point.padding = #0.3,
+#                  segment.color = "#DA70D6", segment.size = 0.3
+                  ) +
+  labs(
+    subtitle = "If academia ever makes you feel like you're not good or smart enough . . .", 
+    title = "It's not you, it's academia ✨",
+    x = "Published Year",
+    y = "Ratings"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.background = element_rect(fill = "#FFF0F5", color = NA),
+    panel.background = element_rect(fill = "#FFFFF0"),
+    plot.title = element_text(hjust = 0.5, color = "#FF1493", 
+                              size = 12, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, color = "#DA70D6", 
+                                 size = 10, face = "italic"),
+    axis.title = element_text(color = "#8B4789", face = "bold"),
+    axis.text = element_text(color = "#C71585"),
+    panel.grid.major = element_line(color = "#FFE4E1", linetype = "dashed"),
+    panel.grid.minor = element_blank(),
+    legend.position = "none"
+  )
+```
+
+
+```{r}
+df_Ahazelwood |> 
+  ggplot(aes(x = published_year, y = ratings, label = titulo_limpio)) +
+  geom_jitter(aes(size = ratings), color = "#FF6B9D", alpha = 0.7,
+              width = 0.4, height = 0.5) +
+  scale_size_continuous(range = c(15, 50)) +
+  geom_text_repel(vjust = -0.5, hjust = 0.5, size = 3, color = "#8B4789",
+                  max.overlaps = 20, box.padding = 0.5, point.padding = 0.3,
+                  segment.color = "#DA70D6", segment.size = 0.3) +
+  labs(
+    subtitle = "If academia ever makes you feel like you're not good or smart enough . . .", 
+    title = "It's not you, it's academia ✨",
+    x = "Published Year",
+    y = "Ratings"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.background = element_rect(fill = "#FFF0F5", color = NA),
+    panel.background = element_blank(),
+    panel.border = element_blank(),
+    plot.title = element_text(hjust = 0.5, color = "#FF1493", 
+                              size = 20, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, color = "#DA70D6", 
+                                 size = 14, face = "italic"),
+    axis.title = element_text(color = "#8B4789", family = "Georgia"),
+    axis.text = element_text(color = "#C71585"),
+    panel.grid.major = element_line(color = "#8B3A62", linetype = "dashed"),
+    panel.grid.minor = element_blank(), 
+    legend.position = "none"
+  )
+```
+
+
+```{r}
+#Guiado con Claude
+
+# Crear las posiciones con jitter primero
+set.seed(123)  # Para que sea reproducible
+df_HwdCoord <- df_Ahazelwood |> 
+  mutate(
+    year_jitter = published_year + runif(n(), -0.4, 0.4),    # Dispersión en X
+    ratings_jitter = ratings + runif(n(), -0.1, 0.1)         # Dispersión en Y
+  )
+
+# Crear el gráfico con las coordenadas dispersas
+df_HwdCoord|> 
+  ggplot(aes(x = year_jitter, y = ratings_jitter, label = titulo_limpio)) +
+  geom_point(aes(size = ratings), color = "#FF6B9D", alpha = 0.7) +
+  scale_size_continuous(range = c(8, 40)) +
+  geom_text_repel(vjust = -0.3, hjust = 0.5, size = 3, color = "#8B4789",
+                  max.overlaps = 20, box.padding = 0.5, point.padding = 0.3,
+                  segment.color = "#DA70D6", segment.size = 0.3) +
+  labs(
+    subtitle = "If academia ever makes you feel like you're not good or smart enough . . .", 
+    title = "It's not you, it's academia ✨",
+    x = "Published Year",
+    y = "Ratings"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.background = element_rect(fill = "#FFF0F5", color = NA),
+    plot.title = element_text(hjust = 0.5, color = "#FF1493", 
+                              size = 12, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5, color = "#DA70D6", 
+                                 size = 10, face = "italic"),
+    axis.title = element_text(color = "#8B4789", face = "bold"),
+    axis.text = element_text(color = "#C71585"),
+    panel.grid.major = element_line(color = "#FFE4E1", linetype = "dashed"),
+    panel.grid.minor = element_blank(),
+    legend.position = "none"
+  )
+```
+
+Recomendaciones:
+
+1. El RMD de trabajo está bien realizado, me gustaría saber más de tu proceso y el por qué de los diferentes gráficos. A pesar de que está claro, creo que es importante mejorar el orden y ocupar distintos chunks para separar la información. No es necesario que hagas una descripción en detalle, pero si que sea posible seguir lo que estás haciendo (sin morir en el intento). El RMD, sin orden, no funcionaba al correrlo.
+3. Importante eliminar las cosas que no ocupas en el RMD.
+2. En general, es un buen trabajo. Mi única recomendación es que trates de describir con tus palabras, hay muchas cosas (especialmente en el README) que parecen fuertemente sacado de lo que dice la IA. Si bien pueden usarla, creo que es importante en el proceso formativo que entiendan efectivamente qué están haciendo con cada función.
+
+
